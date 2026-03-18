@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define ROW 10
 #define COL 10
@@ -23,7 +24,7 @@ int isValid(int x, int y) {
             visited[x][y] == 0);
 }
 
-int BFS(int startX, int startY, int goalX, int goalY) {
+int BFS(int startX, int startY, int goalX, int goalY, int *distance) {
 
     Node queue[ROW * COL];
     int front = 0, rear = 0;
@@ -31,12 +32,16 @@ int BFS(int startX, int startY, int goalX, int goalY) {
     queue[rear++] = (Node){startX, startY};
     visited[startX][startY] = 1;
 
+    int level[ROW][COL] = {0};
+
     while (front < rear) {
 
         Node current = queue[front++];
 
-        if (current.x == goalX && current.y == goalY)
+        if (current.x == goalX && current.y == goalY) {
+            *distance = level[current.x][current.y];
             return 1;
+        }
 
         for (int i = 0; i < 4; i++) {
             int newX = current.x + dx[i];
@@ -46,6 +51,7 @@ int BFS(int startX, int startY, int goalX, int goalY) {
                 visited[newX][newY] = 1;
                 parentX[newX][newY] = current.x;
                 parentY[newX][newY] = current.y;
+                level[newX][newY] = level[current.x][current.y] + 1;
                 queue[rear++] = (Node){newX, newY};
             }
         }
@@ -73,30 +79,60 @@ void tracePath(int startX, int startY, int goalX, int goalY) {
 
 int main() {
 
-    int startX = 0, startY = 0;
-    int goalX = 9, goalY = 9;
+    srand(time(NULL));
 
+    int startX, startY, goalX, goalY;
+    int densityChoice;
+    int obstacleCount;
+    int shortestDistance;
+
+    printf("Grid Size: %dx%d\n", ROW, COL);
+
+    printf("Enter Start Coordinates (row col): ");
+    scanf("%d %d", &startX, &startY);
+
+    printf("Enter Goal Coordinates (row col): ");
+    scanf("%d %d", &goalX, &goalY);
+
+    if (startX < 0 || startX >= ROW || startY < 0 || startY >= COL ||
+        goalX < 0 || goalX >= ROW || goalY < 0 || goalY >= COL) {
+        printf("Invalid coordinates!\n");
+        return 0;
+    }
+
+    printf("\nSelect Obstacle Density:\n");
+    printf("1. Low\n2. Medium\n3. High\n");
+    scanf("%d", &densityChoice);
+
+    if (densityChoice == 1)
+        obstacleCount = 15;
+    else if (densityChoice == 2)
+        obstacleCount = 25;
+    else
+        obstacleCount = 40;
+
+    // Initialize grid
     for (int i = 0; i < ROW; i++)
         for (int j = 0; j < COL; j++) {
             grid[i][j] = 0;
             visited[i][j] = 0;
         }
 
-    // Generate random obstacles
-    for (int i = 0; i < 25; i++) {
+    // Generate obstacles
+    for (int i = 0; i < obstacleCount; i++) {
         int r = rand() % ROW;
         int c = rand() % COL;
-        grid[r][c] = 1;
+        if (!(r == startX && c == startY) &&
+            !(r == goalX && c == goalY))
+            grid[r][c] = 1;
     }
 
-    grid[startX][startY] = 0;
-    grid[goalX][goalY] = 0;
-
-    if (BFS(startX, startY, goalX, goalY)) {
+    if (BFS(startX, startY, goalX, goalY, &shortestDistance)) {
         tracePath(startX, startY, goalX, goalY);
-        printf("Path Found!\n\n");
+        printf("\nPath Found!\n");
+        printf("Shortest Distance: %d\n\n", shortestDistance);
     } else {
-        printf("No Path Found!\n");
+        printf("\nNo Path Found!\n");
         return 0;
     }
 
